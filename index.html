@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ulas Analiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b10;
+    --surface: #0f1318;
+    --surface2: #161c24;
+    --surface3: #1c242f;
+    --accent: #00d4ff;
+    --accent2: #0099bb;
+    --green: #00ff88;
+    --green2: #00cc6a;
+    --yellow: #ffd700;
+    --red: #ff4d6d;
+    --text: #e8edf2;
+    --muted: #5a6a7a;
+    --border: #1e2a38;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse at 100% 100%, rgba(0,255,136,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; padding: 0 16px; }
+
+  /* ── Header ── */
+  .hero {
+    text-align: center;
+    padding: 40px 16px 32px;
+    position: relative;
+  }
+
+  .hero::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 20px auto 0;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 20px;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    padding: 5px 14px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .hero-badge::before { content: '⚽'; }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    letter-spacing: 3px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .hero-sub {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .tarih-badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--yellow);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 16px;
+    margin-top: 12px;
+  }
+
+  /* ── Analiz Butonu ── */
+  .analiz-wrap {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .btn-analiz {
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    border: none;
+    border-radius: 14px;
+    color: #080b10;
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    padding: 16px 48px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 30px rgba(0,212,255,0.2);
+  }
+
+  .btn-analiz:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(0,212,255,0.35);
+  }
+
+  .btn-analiz:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ── Loading ── */
+  .loading {
+    text-align: center;
+    padding: 48px 20px;
+    display: none;
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  .loading p { color: var(--muted); font-size: 13px; }
+  .loading p span { color: var(--accent); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Özet istatistik ── */
+  .ozet-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .ozet-kart {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .ozet-sayi {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 1px;
+    display: block;
+  }
+
+  .ozet-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  /* ── Maç Kartları ── */
+  .mac-giris-bolum {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .mac-giris-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0;
+  }
+  #mac-giris {
+    width: 100%;
+    max-width: 420px;
+    height: 140px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    padding: 12px;
+    resize: none;
+    outline: none;
+  }
+  #mac-giris:focus { border-color: var(--accent); }
+
+  .mac-ekle-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .mac-ekle-form input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .mac-ekle-form input[type="time"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .mac-ekle-form input:focus { border-color: var(--accent); }
+  .btn-ekle {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 10px;
+    cursor: pointer;
+    width: 100%;
+  }
+  #mac-listesi-giris {
+    width: 100%;
+    max-width: 420px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .giris-mac-satir {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  .giris-mac-satir span { color: var(--muted); font-size: 0.75rem; margin-left: 6px; }
+  .giris-mac-sil {
+    background: none;
+    border: none;
+    color: #ff4444;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+
+  .saat-filtre {
+    margin-top: 14px;
+    text-align: center;
+  }
+  .saat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .saat-butonlar {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .saat-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .saat-btn.aktif {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+  }
+  .mac-gizli { display: none !important; }
+
+  .bolum-baslik {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bolum-baslik::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .maclar { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+
+  /* ── Kupon ── */
+  .kupon-wrap {
+    background: linear-gradient(135deg, #0f1318 0%, #1a2535 100%);
+    border: 2px solid var(--yellow);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 12px;
+    box-shadow: 0 0 30px rgba(255,215,0,0.15);
+  }
+  .kupon-baslik {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,215,0,0.2);
+  }
+  .kupon-baslik-sol { font-size: 0.8rem; color: var(--muted); }
+  .kupon-baslik-sag { font-size: 0.8rem; color: var(--yellow); font-weight: 600; }
+  .kupon-satir {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    gap: 8px;
+  }
+  .kupon-no {
+    width: 24px;
+    height: 24px;
+    background: var(--yellow);
+    color: #000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .kupon-mac {
+    flex: 1;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .kupon-mac span {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .kupon-tahmin {
+    background: rgba(255,215,0,0.15);
+    color: var(--yellow);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .kupon-alt {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .kupon-oran { font-size: 0.85rem; color: var(--muted); }
+  .kupon-oran strong { color: var(--green); font-size: 1.1rem; }
+  .btn-kopyala {
+    background: var(--yellow);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-paylas {
+    background: #25D366;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-paylas:active { opacity: 0.8; }
+
+  .mac-kart {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    animation: slideUp 0.3s ease both;
+  }
+
+  .mac-kart:hover {
+    border-color: rgba(0,212,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  .mac-kart.ust { border-left: 3px solid var(--accent); }
+  .mac-kart.var { border-left: 3px solid var(--green); }
+  .mac-kart.ikisi { border-left: 3px solid var(--yellow); }
+
+  .mac-ust {
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .takim {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .takim.ev { text-align: left; }
+  .takim.dep { text-align: right; }
+
+  .mac-orta { text-align: center; }
+
+  .mac-saat {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .mac-lig {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .vs {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .mac-alt {
+    background: var(--surface2);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tahmin-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .badge {
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-ust { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .badge-var { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+
+  .guc-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .guc-track {
+    width: 80px;
+    height: 4px;
+    background: var(--surface3);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .guc-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+  }
+
+  .mac-neden {
+    padding: 10px 18px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    border-top: 1px solid var(--border);
+  }
+
+  .mac-neden strong { color: var(--text); }
+
+  /* ── Uyarı ── */
+  .uyari {
+    background: rgba(255,215,0,0.06);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .uyari strong { color: var(--yellow); }
+
+  /* ── Boş / Hata ── */
+  .bos {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .bos-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* ── Animasyon ── */
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 500px) {
+    .takim { font-size: 12px; }
+    .ozet-sayi { font-size: 1.5rem; }
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+<div class="container">
+
+  <div class="hero">
+    <div class="hero-badge">AI Destekli Analiz</div>
+    <img src="data:image/jpeg;base64,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" alt="Ulas" style="width:90px;height:90px;border-radius:50%;border:3px solid var(--accent);box-shadow:0 0 20px rgba(0,212,255,0.3);margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;">
+    <h1>ULAS <span>ANALİZ</span></h1>
+    <p class="hero-sub">Günlük maç analizleri · 2.5 Üst · Var</p>
+    <div class="tarih-badge" id="tarih-badge">📅 Yükleniyor...</div>
+  </div>
+
+  <div class="analiz-wrap">
+    <button class="btn-analiz" id="btn-analiz" onclick="analizYap()">
+      ⚡ ANALİZİ BAŞLAT
+    </button>
+    <div class="saat-filtre">
+      <span class="saat-label">🕐 Saat Filtresi:</span>
+      <div class="saat-butonlar">
+        <button class="saat-btn aktif" onclick="saatFiltre('hepsi',this)">Hepsi</button>
+        <button class="saat-btn" onclick="saatFiltre('sabah',this)">00–12</button>
+        <button class="saat-btn" onclick="saatFiltre('oglen',this)">12–18</button>
+        <button class="saat-btn" onclick="saatFiltre('aksam',this)">18–21</button>
+        <button class="saat-btn" onclick="saatFiltre('gece',this)">21–24</button>
+        <button class="saat-btn" style="border-color:var(--yellow);color:var(--yellow)" onclick="saatFiltre('yuksek',this)">🔥 +75</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <p>AI maçları analiz ediyor... <span id="loading-text">Bugünün maçları taranıyor</span></p>
+  </div>
+
+  <div id="sonuclar" style="display:none">
+
+    <div class="uyari">
+      <strong>⚠️ Sorumluluk Reddi:</strong> Bu analizler yapay zeka tarafından üretilmiş tahminlerdir. Kesin sonuç garantisi verilmez. Sorumlu oynayın.
+    </div>
+
+    <div class="ozet-bar" id="ozet-bar"></div>
+
+    <div id="mac-listesi"></div>
+
+    <div id="kupon-bolum" style="display:none; margin-top:32px;">
+      <div class="bolum-baslik" style="color:var(--yellow); font-size:1.3rem;">🎟️ ULAS'IN KUPONU</div>
+      <div id="kupon-kart"></div>
+    </div>
+
+  </div>
+
+  <div id="hata" style="display:none">
+    <div class="bos">
+      <div class="bos-icon">⚠️</div>
+      <p id="hata-mesaj">Bir hata oluştu.</p>
+      <br>
+      <button class="btn-analiz" style="font-size:1rem;padding:12px 32px" onclick="analizYap()">Tekrar Dene</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const bugun = new Date();
+  const gunler = ['Pazar','Pazartesi','Sali','Carsamba','Persembe','Cuma','Cumartesi'];
+  const aylar = ['Ocak','Subat','Mart','Nisan','Mayis','Haziran','Temmuz','Agustos','Eylul','Ekim','Kasim','Aralik'];
+  const tarihStr = bugun.getDate() + ' ' + aylar[bugun.getMonth()] + ' ' + bugun.getFullYear();
+  const tarihISO = bugun.toISOString().slice(0,10);
+  document.getElementById('tarih-badge').textContent = '📅 ' + gunler[bugun.getDay()] + ', ' + tarihStr;
+
+  const loadingTexts = ['Bugünün maçları aranıyor...','Lig programları taranıyor...','İstatistikler analiz ediliyor...','Tahminler hesaplanıyor...'];
+  let loadingInterval;
+  let aktifSaatFiltre = 'hepsi';
+  let eklenenMaclar = [];
+
+  function macEkle() {
+    const ev = document.getElementById('input-ev').value.trim();
+    const dep = document.getElementById('input-dep').value.trim();
+    const saat = document.getElementById('input-saat').value || '21:00';
+    if (!ev || !dep) { alert('Lütfen her iki takım adını gir!'); return; }
+    eklenenMaclar.push({ ev, dep, saat });
+    document.getElementById('input-ev').value = '';
+    document.getElementById('input-dep').value = '';
+    guncelleMacListesi();
+  }
+
+  function macSil(i) {
+    eklenenMaclar.splice(i, 1);
+    guncelleMacListesi();
+  }
+
+  function guncelleMacListesi() {
+    const el = document.getElementById('mac-listesi-giris');
+    if (eklenenMaclar.length === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = eklenenMaclar.map((m, i) =>
+      '<div class="giris-mac-satir">' +
+      '<div>' + m.ev + ' vs ' + m.dep + '<span>' + m.saat + '</span></div>' +
+      '<button class="giris-mac-sil" onclick="macSil(' + i + ')">🗑</button>' +
+      '</div>'
+    ).join('');
+  }
+
+  function saatFiltre(tip, btn) {
+    aktifSaatFiltre = tip;
+    document.querySelectorAll('.saat-btn').forEach(b => b.classList.remove('aktif'));
+    btn.classList.add('aktif');
+    uygulaFiltre();
+    // Kupon varsa güncelle
+    if (window._tumMaclar) renderKupon(window._tumMaclar);
+  }
+
+  function saatiAl(saatStr) {
+    if (!saatStr || saatStr === '?') return -1;
+    const temiz = saatStr.trim().replace(/[^0-9:]/g, '');
+    const parca = temiz.split(':');
+    const saat = parseInt(parca[0]);
+    return isNaN(saat) ? -1 : saat;
+  }
+
+  function uygulaFiltre() {
+    document.querySelectorAll('.mac-kart').forEach(function(kart) {
+      const saatEl = kart.querySelector('.mac-saat');
+      const saatText = saatEl ? saatEl.textContent.trim() : '';
+      const saat = saatiAl(saatText);
+      const gucEl = kart.querySelector('.mac-guc');
+      const guc = gucEl ? parseInt(gucEl.textContent) : 0;
+      const evEl = kart.querySelector('.takim.ev');
+      const depEl = kart.querySelector('.takim.dep');
+      const key = (evEl ? evEl.textContent : '') + (depEl ? depEl.textContent : '');
+      const yakin = !window._yakinMaclar || window._yakinMaclar.has(key);
+
+      let goster = true;
+      if (aktifSaatFiltre === 'yuksek') goster = guc >= 75;
+      else if (aktifSaatFiltre === 'hepsi') goster = yakin;
+      else if (aktifSaatFiltre === 'sabah') goster = yakin && saat >= 0 && saat < 12;
+      else if (aktifSaatFiltre === 'oglen') goster = yakin && saat >= 12 && saat < 18;
+      else if (aktifSaatFiltre === 'aksam') goster = yakin && saat >= 18 && saat < 21;
+      else if (aktifSaatFiltre === 'gece') goster = yakin && (saat >= 21 || saat === -1);
+      kart.classList.toggle('mac-gizli', !goster);
+    });
+  }
+
+  async function analizYap() {
+    document.getElementById('btn-analiz').disabled = true;
+    document.getElementById('sonuclar').style.display = 'none';
+    document.getElementById('hata').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+
+    let li = 0;
+    loadingInterval = setInterval(() => {
+      li = (li + 1) % loadingTexts.length;
+      document.getElementById('loading-text').textContent = loadingTexts[li];
+    }, 2000);
+
+    const PROXY_URL = 'https://ulas-proxy.onrender.com';
+
+    try {
+      document.getElementById('loading-text').textContent = 'Bugünün maçları çekiliyor...';
+
+      const fixturesResp = await fetch(`${PROXY_URL}/fixtures?date=${tarihISO}`);
+      const fixturesData = await fixturesResp.json();
+      const fixtures = fixturesData.response || [];
+
+      if (fixtures.length === 0) throw new Error('Bugün için maç bulunamadı');
+
+      // Tüm maçları sakla (yüksek güven filtresi için)
+      window._tumFixtures = fixtures;
+
+      // Tüm NS maçları al (yüksek güven filtresi için gün boyunca hepsi)
+      const tumNS = fixtures.filter(f => f.fixture.status.short === 'NS');
+
+      // Şu andan sonraki maçları al (normal görünüm için)
+      const simdi = new Date();
+      const gelecek = tumNS.filter(f => new Date(f.fixture.date) > simdi);
+      const gosterilecek = gelecek.length > 0 ? gelecek : tumNS;
+
+      if (tumNS.length === 0) throw new Error('Bugün için kalan maç bulunamadı');
+
+      // AI'ya günün TÜM maçlarını gönder
+      const macGiris = tumNS.slice(0, 40).map(f => {
+        const ev = f.teams.home.name;
+        const dep = f.teams.away.name;
+        const lig = f.league.name;
+        const saatDate = new Date(f.fixture.date);
+        const saat = saatDate.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Istanbul'});
+        return `${ev} vs ${dep} (${lig}, ${saat})`;
+      }).join('\n');
+
+      // Yakın maçların isimlerini sakla (normal görünüm filtresi için)
+      window._yakinMaclar = new Set(gosterilecek.map(f => f.teams.home.name + f.teams.away.name));
+
+      document.getElementById('loading-text').textContent = 'AI analiz yapıyor...';
+
+      const prompt = `Sen bir futbol analisti ve bahis uzmanısın. Bugün ${tarihISO} tarihinde şu maçlar oynanıyor:\n\n${macGiris}\n\nYUKARIDAKİ MAÇLARIN TAMAMINI listele, hiçbirini atlama! Her maç için 2.5 ÜST veya KARŞILIKLI GOL VAR tahmini yap. Güven düşük olsa bile her maçı ekle.\n\nSADECE şu JSON formatında yanıt ver:\n{"maclar":[{"ev":"Ev Sahibi","dep":"Deplasman","lig":"Lig Adı","saat":"21:00","tip":"UST_VAR","guc":65,"neden":"Kısa Türkçe analiz"}],"ozet":{"toplam":10,"ust":6,"var":5,"ikisi":4}}\n\ntip: UST_VAR veya UST veya VAR. guc: 50-95 arası.`;
+
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': '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',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await resp.json();
+      let finalText = (data.content || []).map(c => c.text || '').join('').trim();
+
+      if (!finalText) throw new Error('Boş yanıt');
+      finalText = finalText.replace(/```json/gi,'').replace(/```/g,'').trim();
+      
+      // JSON'u bul ve temizle
+      const matchJson = finalText.match(/\{[\s\S]*\}/);
+      if (!matchJson) throw new Error('JSON bulunamadı');
+      
+      // Bozuk karakterleri temizle
+      let jsonStr = matchJson[0].replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ');
+      
+      let json;
+      try {
+        json = JSON.parse(jsonStr);
+      } catch(e) {
+        // Sadece maclar dizisini almayı dene
+        const maclarMatch = jsonStr.match(/"maclar"\s*:\s*\[[\s\S]*?\]\s*(?=,|\})/);
+        if (maclarMatch) {
+          json = JSON.parse('{"maclar":' + maclarMatch[0].replace(/^"maclar"\s*:\s*/, '') + '}');
+        } else {
+          throw new Error('JSON parse hatası: ' + e.message);
+        }
+      }
+      
+      if (!json.maclar || json.maclar.length === 0) throw new Error('Maç listesi boş');
+
+      clearInterval(loadingInterval);
+      document.getElementById('loading').style.display = 'none';
+      renderSonuclar(json);
+
+    } catch(err) {
+      clearInterval(loadingInterval);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('btn-analiz').disabled = false;
+      document.getElementById('hata').style.display = 'block';
+      document.getElementById('hata-mesaj').textContent = 'Hata: ' + err.message;
+    }
+  }
+
+  function renderSonuclar(json) {
+    document.getElementById('btn-analiz').disabled = false;
+    document.getElementById('sonuclar').style.display = 'block';
+
+    const oz = json.ozet || {};
+    document.getElementById('ozet-bar').innerHTML =
+      '<div class="ozet-kart"><span class="ozet-sayi" style="color:var(--accent)">' + (oz.toplam || json.maclar.length) + '</span><div class="ozet-label">Toplam Mac</div></div>' +
+      '<div class="ozet-kart"><span class="ozet-sayi" style="color:var(--accent)">' + (oz.ust || '-') + '</span><div class="ozet-label">2.5 Ust</div></div>' +
+      '<div class="ozet-kart"><span class="ozet-sayi" style="color:var(--green)">' + (oz.var || '-') + '</span><div class="ozet-label">Var</div></div>';
+
+    const ustVar = json.maclar.filter(m => m.tip === 'UST_VAR');
+    const sadUst = json.maclar.filter(m => m.tip === 'UST');
+    const sadVar = json.maclar.filter(m => m.tip === 'VAR');
+
+    let html = '';
+    if (ustVar.length > 0) {
+      html += '<div class="bolum-baslik" style="color:var(--yellow)">🔥 2.5 UST + VAR (' + ustVar.length + ')</div>';
+      html += '<div class="maclar">' + ustVar.map(function(m){ return kartHTML(m,'ikisi'); }).join('') + '</div>';
+    }
+    if (sadUst.length > 0) {
+      html += '<div class="bolum-baslik" style="color:var(--accent)">📈 2.5 UST (' + sadUst.length + ')</div>';
+      html += '<div class="maclar">' + sadUst.map(function(m){ return kartHTML(m,'ust'); }).join('') + '</div>';
+    }
+    if (sadVar.length > 0) {
+      html += '<div class="bolum-baslik" style="color:var(--green)">⚽ KARSILIKLI GOL VAR (' + sadVar.length + ')</div>';
+      html += '<div class="maclar">' + sadVar.map(function(m){ return kartHTML(m,'var'); }).join('') + '</div>';
+    }
+    if (!html) html = '<div class="bos"><div class="bos-icon">😔</div><p>Bugün uygun mac bulunamadi.</p></div>';
+
+    document.getElementById('mac-listesi').innerHTML = html;
+    document.querySelectorAll('.mac-kart').forEach(function(el,i){ el.style.animationDelay = (i*0.05)+'s'; });
+    uygulaFiltre();
+
+    // Kupon oluştur
+    window._tumMaclar = json.maclar;
+    renderKupon(json.maclar);
+  }
+
+  function renderKupon(maclar) {
+    // Önce saat filtresini uygula
+    let filtrelenmis = maclar.filter(function(m) {
+      if (aktifSaatFiltre === 'hepsi') return true;
+      const saat = saatiAl(m.saat || '');
+      if (saat === -1) return true;
+      if (aktifSaatFiltre === 'sabah') return saat >= 0 && saat < 12;
+      if (aktifSaatFiltre === 'oglen') return saat >= 12 && saat < 18;
+      if (aktifSaatFiltre === 'aksam') return saat >= 18 && saat < 21;
+      if (aktifSaatFiltre === 'gece') return saat >= 21;
+      return true;
+    });
+    // Önce UST_VAR, sonra UST, sonra VAR — en iyi 5 maç
+    const sirali = filtrelenmis.slice().sort(function(a, b) {
+      const puan = { 'UST_VAR': 3, 'UST': 2, 'VAR': 1 };
+      if ((puan[b.tip]||0) !== (puan[a.tip]||0)) return (puan[b.tip]||0) - (puan[a.tip]||0);
+      return (b.guc||0) - (a.guc||0);
+    });
+    const secilen = sirali.slice(0, 5);
+
+    if (secilen.length === 0) return;
+
+    const tipLabel = { 'UST_VAR': '2.5 Üst + Var', 'UST': '2.5 Üst', 'VAR': 'K.G. Var' };
+
+    let satirlar = secilen.map(function(m, i) {
+      return '<div class="kupon-satir">' +
+        '<div class="kupon-no">' + (i+1) + '</div>' +
+        '<div class="kupon-mac">' + m.ev + ' - ' + m.dep + '<span>' + (m.lig||'') + ' · ' + (m.saat||'') + '</span></div>' +
+        '<div class="kupon-tahmin">' + (tipLabel[m.tip]||m.tip) + '</div>' +
+      '</div>';
+    }).join('');
+
+    const html = '<div class="kupon-wrap" id="kupon-gorsel">' +
+      '<div class="kupon-baslik">' +
+        '<div class="kupon-baslik-sol">📅 ' + tarihStr + ' · 5 Maç Kombin</div>' +
+        '<div class="kupon-baslik-sag">🔥 AI Seçimi</div>' +
+      '</div>' +
+      satirlar +
+      '<div class="kupon-alt">' +
+        '<div class="kupon-oran">Tahmini Oran: <strong>x' + (Math.pow(1.65, 5).toFixed(2)) + '</strong></div>' +
+        '<button class="btn-paylas" onclick="kuponiPaylas()">📤 WhatsApp\'ta Paylaş</button>' +
+      '</div>' +
+    '</div>';
+
+    document.getElementById('kupon-kart').innerHTML = html;
+    document.getElementById('kupon-bolum').style.display = 'block';
+
+    // Kopyalama için global değişken
+    window._kuponMetin = tarihStr + ' - ULAS ANALİZ KUPONU\n' +
+      secilen.map(function(m, i) {
+        return (i+1) + '. ' + m.ev + ' - ' + m.dep + ' → ' + (tipLabel[m.tip]||m.tip);
+      }).join('\n');
+  }
+
+  async function kuponiPaylas() {
+    const btn = document.querySelector('.btn-paylas');
+    btn.textContent = '⏳ Hazırlanıyor...';
+    btn.disabled = true;
+
+    try {
+      const el = document.getElementById('kupon-gorsel');
+      const canvas = await html2canvas(el, {
+        backgroundColor: '#0f1318',
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+
+      canvas.toBlob(async function(blob) {
+        // Web Share API ile paylaş (telefonda çalışır)
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'kupon.png', { type: 'image/png' })] })) {
+          const file = new File([blob], 'ulas-kupon.png', { type: 'image/png' });
+          await navigator.share({
+            title: 'Ulas Analiz Kuponu',
+            files: [file]
+          });
+        } else {
+          // Fallback: direkt indir
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'ulas-kupon.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+        btn.textContent = '📤 WhatsApp\'ta Paylaş';
+        btn.disabled = false;
+      }, 'image/png');
+
+    } catch(e) {
+      btn.textContent = '📤 WhatsApp\'ta Paylaş';
+      btn.disabled = false;
+    }
+  }
+
+  function kartHTML(m, tip) {
+    const badges = tip === 'ikisi'
+      ? '<span class="badge badge-ust">2.5 UST</span><span class="badge badge-var">⚽ VAR</span>'
+      : tip === 'ust' ? '<span class="badge badge-ust">2.5 UST</span>'
+      : '<span class="badge badge-var">⚽ VAR</span>';
+    const guc = m.guc || 72;
+    const gucRenk = guc >= 80 ? 'var(--green)' : guc >= 70 ? 'var(--accent)' : 'var(--yellow)';
+    return '<div class="mac-kart ' + tip + '">' +
+      '<div class="mac-ust">' +
+        '<div class="takim ev">' + m.ev + '</div>' +
+        '<div class="mac-orta"><div class="mac-saat">' + (m.saat||'?') + '</div><div class="mac-lig">' + (m.lig||'') + '</div><div class="vs">vs</div></div>' +
+        '<div class="takim dep">' + m.dep + '</div>' +
+      '</div>' +
+      '<div class="mac-alt">' +
+        '<div class="tahmin-badges">' + badges + '</div>' +
+        '<div class="guc-bar"><span class="mac-guc" style="color:' + gucRenk + ';font-weight:600">' + guc + '</span>' +
+        '<div class="guc-track"><div class="guc-fill" style="width:' + guc + '%;background:linear-gradient(90deg,var(--accent),' + gucRenk + ')"></div></div></div>' +
+      '</div>' +
+      (m.neden ? '<div class="mac-neden">' + m.neden + '</div>' : '') +
+    '</div>';
+  }
+</script>
+</body>
+</html>
