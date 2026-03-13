@@ -610,7 +610,7 @@
         <button class="saat-btn" onclick="saatFiltre('oglen',this)">12–18</button>
         <button class="saat-btn" onclick="saatFiltre('aksam',this)">18–21</button>
         <button class="saat-btn" onclick="saatFiltre('gece',this)">21–24</button>
-        <button class="saat-btn" style="border-color:var(--yellow);color:var(--yellow)" onclick="saatFiltre('yuksek',this)">🔥 +75</button>
+        <button class="saat-btn" style="border-color:var(--yellow);color:var(--yellow)" onclick="saatFiltre('yuksek',this)">🔥 +70</button>
       </div>
     </div>
   </div>
@@ -718,7 +718,7 @@
       const yakin = !window._yakinMaclar || window._yakinMaclar.has(key);
 
       let goster = true;
-      if (aktifSaatFiltre === 'yuksek') goster = guc >= 75;
+      if (aktifSaatFiltre === 'yuksek') goster = guc >= 70;
       else if (aktifSaatFiltre === 'hepsi') goster = yakin;
       else if (aktifSaatFiltre === 'sabah') goster = yakin && saat >= 0 && saat < 12;
       else if (aktifSaatFiltre === 'oglen') goster = yakin && saat >= 12 && saat < 18;
@@ -781,19 +781,12 @@
 
       const prompt = `Sen bir futbol analisti ve bahis uzmanısın. Bugün ${tarihISO} tarihinde şu maçlar oynanıyor:\n\n${macGiris}\n\nYUKARIDAKİ MAÇLARIN TAMAMINI listele, hiçbirini atlama! Her maç için 2.5 ÜST veya KARŞILIKLI GOL VAR tahmini yap. Güven düşük olsa bile her maçı ekle.\n\nSADECE şu JSON formatında yanıt ver:\n{"maclar":[{"ev":"Ev Sahibi","dep":"Deplasman","lig":"Lig Adı","saat":"21:00","tip":"UST_VAR","guc":65,"neden":"Kısa Türkçe analiz"}],"ozet":{"toplam":10,"ust":6,"var":5,"ikisi":4}}\n\ntip: UST_VAR veya UST veya VAR. guc: 50-95 arası.`;
 
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('https://ulas-proxy.onrender.com/analyze', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': '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',
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 8000,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        body: JSON.stringify({ prompt })
       });
 
       const data = await resp.json();
